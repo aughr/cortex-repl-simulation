@@ -53,6 +53,11 @@ func runTrial(ingesters int, failures int, shards map[int]bool) bool {
 	for i := 0; i < failures; i++ {
 		failed := order[i]
 		failedshard := shardFor(failed)
+		// if the failed shard isn't in the shards used, continue
+		if !shards[failedshard] {
+			continue
+		}
+
 		if !shardfailures[failedshard].record(zoneFor(failed)) {
 			return false
 		}
@@ -75,8 +80,9 @@ type tracker struct {
 }
 
 func (t *tracker) record(zone int) bool {
-	// if we've already recorded a partial failure for this zone
 	t.partial[zone] += 1
+
+	// if we've already recorded a partial failure for this zone
 	if t.partial[zone] == 2 {
 		// if we've already seen another zone fail, return false
 		if t.total {
